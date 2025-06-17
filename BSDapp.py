@@ -1,0 +1,275 @@
+import streamlit as st
+import json
+from openai import OpenAI
+import pandas as pd
+from oauth2client.service_account import ServiceAccountCredentials
+import gspread
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+import tempfile
+
+
+client = OpenAI(api_key=st.secrets["openai_api_key"])
+
+def upload_file_to_drive(uploaded_file, filename, folder_id=None):
+    gauth = GoogleAuth()
+    gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        "/Users/acheng/Downloads/Visual Studio Code.app/Contents/bsd-finance-637183150eaf.json", 
+        ["https://www.googleapis.com/auth/drive"]
+    )
+    drive = GoogleDrive(gauth)
+
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        tmp_file.write(uploaded_file.getbuffer())
+        tmp_path = tmp_file.name
+
+    file_metadata = {'title': filename}
+    if folder_id:
+        file_metadata['parents'] = [{'id': folder_id}]
+
+    gfile = drive.CreateFile(file_metadata)
+    gfile.SetContentFile(tmp_path)
+    gfile.Upload()
+
+    return gfile['id'], gfile['alternateLink']
+
+cost_code_mapping_text = """00030 - Financing Fees
+01020 - First Aid/safety/Inspect/Carp./Lab
+01025 - Safety Supplies
+01100 - Surveying
+01200 - Hydro/Gas/Telus Services
+01210 - Temp Hydro
+01220 - Temporary Heat
+01230 - Temporary Lighting & Security Lighting
+01240 - Temporary Water
+01250 - Temporary Fencing
+01350 - Miscellaneous Expenses
+01400 - Tree Protection
+01510 - Site Office
+01520 - Sanitary Facilities
+01560 - Project Construction Signs
+01721 - Pressure Washing
+01750 - Disposal Bins/Fees
+01760 - Protect Finishes
+01810 - Hoist/ crane/Scaffold rental
+01820 - Winter Protection
+02270 - Erosion & Sediment Control
+02300 - Site Services (Fence)
+02310 - Finish Grading
+02315 - Excavation & Backfill
+02600 - Drainaige & Stormwater
+02621 - Foundation Drain Tile
+02700 - Exterior Hardscape
+02705 - Exterior Decking
+02773 - Curbs & Gutters & Sidewalk
+02820 - Fencing & Gates (Fnds, Stone & Alumn)
+02900 - Landscaping
+02910 - Irrigation Systems
+03050 - Concrete Material
+03100 - Formwork Material
+03210 - Reinforcing Steel Material and Hardware
+04200 - Masonry
+04400 - Stone Veneer
+05090 - Exterior Railing and Guardrail
+05095 - Driveway Gates & Fencing
+05100 - Steel Beams
+05700 - Metal Chimney Cap
+05710 - Deck Flashing
+06060 - Framing Lumber
+06175 - Wood Trusses
+06200 - Interior Finishing Material
+06220 - Finishing Labor
+06410 - Custom Cabinets
+06415 - Bath Vanity
+06420 - Stone/Countertop - Material
+06425 - Stone/Countertop - Fabrication
+06430 - Interior Railings
+06450 - Fireplace Mantels
+07200 - Interior Waterproofing/Shower pan
+07210 - Building Insulation
+07220 - Building Exterior Waterproofing/Vapour Barrier
+07311 - Roofing System
+07450 - Siding/Trims - Material
+07465 - Stucco
+07500 - Torch & Decking
+07600 - Metal Roofing - Prepainted Aluminum
+07714 - Gutter & Downspouts
+07920 - Sealants & Caulking
+08210 - Interior Doors
+08215 - Exterior Doors
+08216 - Front/Entrance Door
+08220 - Closet Doors - Bifolds
+08360 - Garage Door
+08560 - Window Material
+08580 - Window Waterproofing
+08600 - Skylights
+08700 - Cabinetry and finish hardware
+08800 - Door hardware
+09200 - Drywall Systems
+09300 - Exterior Tile Work- Material
+09640 - Wood Flooring - Material
+09650 - Interior Tile Work- Material
+09680 - Carpeting - Material
+09900 - Painting Exterior
+09905 - Painting Interior
+09910 - Wallpaper Material
+10810 - Residential Washroom Accessories
+10820 - Shower Enclosures
+10830 - Bathroom Mirrors
+10840 - Mirror and Glazing
+10850 - Wine Rack
+10900 - Closet Specialties
+11450 - Appliances
+11455 - Built-in Vacuum
+11460 - Outdoor Kitchen BBQ & Sink
+12490 - Window Treatment
+12500 - Furniture
+13150 - Swimming Pools
+13160 - Generator
+13170 - Dry Sauna
+13180 - Hot Tubs
+15015 - Plumbing Rough in
+15300 - Fire Protection (Sprinklers)
+15410 - Plumbing Fixtures
+15500 - Radiant Heating
+15610 - Wine Cellar Cooling Unit
+15700 - Air Conditioning/HRV
+15750 - Fire Place Inserts
+16050 - General Electrical
+16100 - Solar System
+16500 - Fixtures
+16800 - Low Voltage (Security, Internet)
+16900 - Sound and Audio"""
+
+
+st.title('BSD Materials Reimbursement')
+
+with st.form("receipt_form"):
+    # Dropdown 1
+    property = st.selectbox("Select Property", ["Coto", "Milford", "647 Navy", "645 Navy", 'Sagebrush', 'Paramount', '126 Scenic', 'San Marino', 'King Arthur', 'Via Sanoma', 'Highland', 'Channel View', 'Paseo De las Estrellas'])
+    
+    # Dropdown 2
+    payable_party = st.selectbox("Select Payable Party", ["Christian Granados (Vendor)", "Jessica Ajtun", "Andres De Jesus", "Nick Yuh (Vendor)"])
+
+
+    uploaded_file = st.file_uploader("Upload Receipt Image", type=["jpg", "jpeg", "png", "heif", "heic"])
+
+
+    submitted = st.form_submit_button("Submit Form (Do not refresh (stay on page) until form fully submitted (takes ~15 seconds))")
+
+    if submitted:
+        # Validate all fields
+        if not property or not payable_party or not uploaded_file:
+            st.error("Please complete all fields and upload a receipt.")
+        else:
+            with st.spinner("Uploading and processing..."):
+                # Upload file to OpenAI
+                file_id = client.files.create(file=uploaded_file, purpose="vision").id
+
+                # Build prompt
+                response = client.responses.create(
+                    model="gpt-4.1-mini",
+                    input=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "input_text",
+                                "text": (
+                                    "From this receipt image, extract:\n"
+                                    "- The date of purchase. This is a recent receipt. If the receipt shows a 2-digit year (e.g. '4-2-25'), assume it's 20xx, not 19xx.\n"
+                                    "- A list of items with each item's 'name' and 'price'. If there is a small fee for an item, combine the two prices. The fee should not have it's own row. \n"
+                                    "- The total tax amount (if present)\n"
+                                    "- Assign a cost code to each item based on its name using the mapping below. Do not give any justification. If no matching cost code assign under Miscellaneous Expenses cost code.\n\n"
+                                    "Each assigned cost code should be in the format: 'CODE - Description'.\n\n"
+                                    "Return a JSON object in this format:\n"
+                                    "{\n"
+                                    '  "date": "YYYY-MM-DD",\n'
+                                    '  "items": [\n'
+                                    '    {"name": "Item name", "price": 0.00, "cost_code": "00030 - Financing Fees"},\n'
+                                    '    ...\n'
+                                    '  ],\n'
+                                    '  "tax": 0.00\n'
+                                    "}\n\n"
+                                    "Here is the cost code mapping:\n" + cost_code_mapping_text
+                                )
+                            },
+                            {"type": "input_image", "file_id": file_id},
+                        ],
+                    }],
+                )
+
+                drive_file_id, drive_link = upload_file_to_drive(uploaded_file, uploaded_file.name, folder_id="1Jc_99_o9EdKrMLltk_B_-rOA-dAOUGs_")
+
+                raw_text = response.output[0].content[0].text
+                cleaned_text = raw_text.strip('```json').strip('```').strip()
+                parsed = json.loads(cleaned_text)
+                date = parsed["date"]
+                items = parsed["items"]
+                tax = parsed.get("tax", 0.0)
+
+                df = pd.DataFrame(items)
+
+                df["price"] = df["price"].astype(float)
+
+                subtotal = df["price"].sum()
+
+                df["tax_share"] = df["price"] / subtotal * tax
+                df["amount"] = (df["price"] + df["tax_share"]).round(2)
+
+                df["Date Invoiced"] = date
+                df['Property'] = property
+                df['Payable Party'] = payable_party
+                df.rename(columns={"name": "Item Name", "cost_code": "Cost Code"}, inplace=True)
+                df['Date Paid'] = None
+                df['Unique ID'] = None
+                df['Worker Name'] = None
+                df['Hours'] = None
+                df['Claim Number'] = None
+                df['QB Property'] = None
+                df['Invoice Number'] = None
+                df['Payment Method'] = None
+                df['Project Description'] = None
+                df['Status'] = None
+                df['Form'] = "Materials"
+                df['Drive Link'] = drive_link
+
+                final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link"]]
+                final_df.rename(columns={"amount": "Amount"}, inplace=True)
+
+
+                def upload_to_google_sheet(df):
+                    from gspread.utils import rowcol_to_a1
+
+                    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                    creds = ServiceAccountCredentials.from_json_keyfile_name("/Users/acheng/Downloads/Visual Studio Code.app/Contents/bsd-finance-637183150eaf.json", scope)
+                    client = gspread.authorize(creds)
+
+                    sheet = client.open("BSD MASTER DATA")
+                    worksheet = sheet.worksheet("TEST")
+
+                    existing = worksheet.get_all_values()
+
+                    # If empty, write headers first
+                    if not existing:
+                        worksheet.append_row(df.columns.tolist(), value_input_option="USER_ENTERED") 
+                        start_row = 2
+                    else:
+                        start_row = len(existing) + 1
+
+                    # Write all rows in one batch
+                    data = df.values.tolist()
+                    end_row = start_row + len(data) - 1
+                    end_col = len(df.columns)
+                    cell_range = f"A{start_row}:{rowcol_to_a1(end_row, end_col)}"
+
+                    worksheet.update(cell_range, data, value_input_option="USER_ENTERED")
+
+
+    
+                
+                upload_to_google_sheet(final_df)
+
+                st.success('Form Fully Submitted!')
+
+                
+ 
