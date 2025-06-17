@@ -19,6 +19,16 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display: none;}
+    .viewerBadge_link__qRIco {display: none;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 
 creds_dict = st.secrets["gcp_service_account"]
