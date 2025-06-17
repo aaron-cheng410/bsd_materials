@@ -8,6 +8,16 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 import tempfile
 
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {visibility: hidden;}
+    .viewerBadge_link__1S137 {display: none !important;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 
