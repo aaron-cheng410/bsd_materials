@@ -50,7 +50,7 @@ def upload_file_to_drive(uploaded_file, filename, folder_id=None):
 
     gfile = drive.CreateFile(file_metadata)
     gfile.SetContentFile(tmp_path)
-    gfile.Upload()
+    gfile.Upload(param={'supportsAllDrives': True})
 
     return gfile['id'], gfile['alternateLink']
 
@@ -219,7 +219,7 @@ with st.form("receipt_form"):
                     }],
                 )
 
-                drive_file_id, drive_link = upload_file_to_drive(uploaded_file, uploaded_file.name, folder_id="1Jc_99_o9EdKrMLltk_B_-rOA-dAOUGs_")
+                drive_file_id, drive_link = upload_file_to_drive(uploaded_file, uploaded_file.name, folder_id="1Hcr059yfSaxJaX2ZAMkANlsMQykDHdUV")
 
                 raw_text = response.output[0].content[0].text
                 cleaned_text = raw_text.strip('```json').strip('```').strip()
