@@ -184,7 +184,7 @@ st.title('BSD Receipt Submittals')
 
 with st.form("receipt_form"):
     # Dropdown 1
-    property = st.selectbox("Select Property", ["", "Coto", "Milford", "647 Navy", "645 Navy", 'Sagebrush', 'Paramount', '126 Scenic', 'San Marino', 'King Arthur', 'Via Sonoma', 'Highland', 'Channel View', 'Paseo De las Estrellas', 'Marguerite'])
+    property = st.selectbox("Select Property", ["", "Coto", "Milford", "647 Navy", "645 Navy", 'Sagebrush', 'Paramount', '126 Scenic', 'San Marino', 'King Arthur', 'Via Sonoma', 'Highland', 'Channel View', 'Paseo De las Estrellas', 'Marguerite', 'BSD SHOP'])
     
     # Dropdown 2
     st.markdown("#### Payable Party")
