@@ -247,7 +247,7 @@ with st.form("receipt_form"):
                         }],
                     )
 
-                    drive_file_id, drive_link = upload_file_to_drive(uploaded_file, uploaded_file.name, folder_id="1Hcr059yfSaxJaX2ZAMkANlsMQykDHdUV")
+                    drive_file_id, drive_link = upload_file_to_drive(uploaded_file, uploaded_file.name, folder_id="185vQywel4ZIEvPwLWWqoFcUxytCn_OW7")
 
                     raw_text = response.output[0].content[0].text
                     cleaned_text = raw_text.strip('```json').strip('```').strip()
