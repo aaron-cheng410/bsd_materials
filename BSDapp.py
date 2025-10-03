@@ -184,7 +184,7 @@ st.title('BSD Receipt Submittals')
 
 with st.form("receipt_form"):
     # Dropdown 1
-    property = st.selectbox("Select Property", ["", "Coto", "Milford", "647 Navy", "645 Navy", 'Sagebrush', 'Paramount', '126 Scenic', 'San Marino', 'King Arthur', 'Via Sonoma', 'Highland', 'Channel View', 'Paseo De las Estrellas', 'Marguerite', 'BSD SHOP'])
+    property = st.selectbox("Select Property", ["", "Coto", "Milford", "647 Navy", "645 Navy", 'Sagebrush', 'Paramount', '126 Scenic', 'San Marino', 'King Arthur', 'Via Sonoma', 'Highland', 'Channel View', 'Paseo De las Estrellas', 'Marguerite', 'BSD SHOP', '5 Montepellier'])
     
     # Dropdown 2
     st.markdown("#### Payable Party")
@@ -281,8 +281,9 @@ with st.form("receipt_form"):
                     df['Status'] = None
                     df['Form'] = "MATERIALS"
                     df['Drive Link'] = drive_link
+                    df['Equation Description'] = df['Item Name']
 
-                    final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link"]]
+                    final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link", "Equation Description"]]
                     final_df.rename(columns={"amount": "Amount"}, inplace=True)
 
 
