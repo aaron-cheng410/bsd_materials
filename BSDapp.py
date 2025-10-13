@@ -195,7 +195,7 @@ with st.form("receipt_form"):
     payment_method_dropdown = st.selectbox("Select from list", ["", "AMEX", "Zelle (Construction)", "Zelle (Materials)"], key="pay_drop")
     payment_method_manual = st.text_input("Or enter manually:", key="pay_manual_input")
     
-
+    
 
     uploaded_files = st.file_uploader("Upload Receipt Image", type=["jpg", "jpeg", "png", "heif", "heic"], accept_multiple_files=True)
 
@@ -205,7 +205,11 @@ with st.form("receipt_form"):
     if submitted:
         # Validate all fields
         payable_party = payable_party_manual.strip() if payable_party_manual.strip() else payable_party_dropdown
-        payment_method = payment_method_manual.strip() if payment_method_manual.strip() else payment_method_dropdown
+        payment_method = (
+            payment_method_manual.strip()
+            if payment_method_manual.strip()
+            else (payment_method_dropdown if payment_method_dropdown else None)
+        )
         if not property or not payable_party or not uploaded_files:
             st.error("Please complete all fields and upload a receipt.")
         else:
@@ -281,15 +285,14 @@ with st.form("receipt_form"):
                     df['Claim Number'] = None
                     df['QB Property'] = None
                     df['Invoice Number'] = None
-                    df['Payment Method'] = None
                     df['Project Description'] = df['Item Name']
                     df['Status'] = None
                     df['Form'] = "MATERIALS"
                     df['Drive Link'] = drive_link
                     df['Equation Description'] = df['Item Name']
-                    df['Payment Method'] = payment_method
+                    df['Payment Method'] = payment_method if payment_method is not None else ""
 
-                    final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link", "Equation Description", "Payment Method"]]
+                    final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link", "Equation Description"]]
                     final_df.rename(columns={"amount": "Amount"}, inplace=True)
 
 
