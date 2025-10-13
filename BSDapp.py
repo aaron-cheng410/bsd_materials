@@ -190,6 +190,10 @@ with st.form("receipt_form"):
     st.markdown("#### Payable Party")
     payable_party_dropdown = st.selectbox("Select from list", ["", "Christian Granados (Vendor)", "Jessica Ajtun", "Andres De Jesus", "Nick Yuh (Vendor)"], key="dropdown")
     payable_party_manual = st.text_input("Or enter manually:", key="manual_input")
+
+    st.markdown("#### Payment Method")
+    payment_method_dropdown = st.selectbox("Select from list", ["", "AMEX", "Zelle (Construction)", "Zelle (Materials)"], key="dropdown")
+    payment_method_manual = st.text_input("Or enter manually:", key="manual_input")
     
 
 
@@ -201,6 +205,7 @@ with st.form("receipt_form"):
     if submitted:
         # Validate all fields
         payable_party = payable_party_manual.strip() if payable_party_manual.strip() else payable_party_dropdown
+        payment_method = payment_method_manual.strip() if payment_method_manual.strip() else payment_method_dropdown
         if not property or not payable_party or not uploaded_files:
             st.error("Please complete all fields and upload a receipt.")
         else:
@@ -282,8 +287,9 @@ with st.form("receipt_form"):
                     df['Form'] = "MATERIALS"
                     df['Drive Link'] = drive_link
                     df['Equation Description'] = df['Item Name']
+                    df['Payment Method'] = payment_method
 
-                    final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link", "Equation Description"]]
+                    final_df = df[["Date Paid", "Date Invoiced", "Unique ID", "Claim Number", "Worker Name", "Hours", "Item Name", "Property", "QB Property", "amount", 'Payable Party', 'Project Description', "Invoice Number", "Cost Code", 'Payment Method', "Status", "Form", "Drive Link", "Equation Description", "Payment Method"]]
                     final_df.rename(columns={"amount": "Amount"}, inplace=True)
 
 
