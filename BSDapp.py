@@ -192,8 +192,8 @@ with st.form("receipt_form"):
     payable_party_manual = st.text_input("Or enter manually:", key="manual_input")
 
     st.markdown("#### Payment Method")
-    payment_method_dropdown = st.selectbox("Select from list", ["", "AMEX", "Zelle (Construction)", "Zelle (Materials)"], key="dropdown")
-    payment_method_manual = st.text_input("Or enter manually:", key="manual_input")
+    payment_method_dropdown = st.selectbox("Select from list", ["", "AMEX", "Zelle (Construction)", "Zelle (Materials)"], key="pay_drop")
+    payment_method_manual = st.text_input("Or enter manually:", key="pay_manual_input")
     
 
 
